@@ -48,14 +48,8 @@ func main() {
 }
 ```
 
-# Features
-
-* Order Preservation: Unlike Go’s built-in maps, orderedmap keeps track of the order in which keys were inserted.
-* JSON Support: Can be marshaled/unmarshaled while preserving order.
-
 # Caveats
 
-* Only supports JSON serialization when keys are of type string, as per JSON specifications.
 * Not optimized for concurrent access, use sync.Mutex if needed.
 
 # Tests
@@ -66,6 +60,8 @@ go test
 
 # Disclaimer  
 
-This project was created for fun and as a simple exercise. While it works as intended, there are other alternatives available.  
+This project was created for fun and as a simple exercise.
+
+While it works as intended, there are other (and probably better) alternatives available.  
 
 If you plan to use it in a production environment, please do so at your own risk.
