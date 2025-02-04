@@ -40,26 +40,22 @@ func (om *OrderedMap[K, V]) GetOrEmpty(key K) V {
 	if i, exists := om.pos[key]; exists {
 		return om.values[i]
 	}
-	var zeroValue V
-	return zeroValue
+	var zero V
+	return zero
 }
 
 func (om *OrderedMap[K, V]) Delete(key K) {
-	i, exists := om.pos[key]
-	if !exists {
-		return
+	if i, exists := om.pos[key]; exists {
+		lastIdx := len(om.keys) - 1
+		if i != lastIdx {
+			om.keys[i], om.keys[lastIdx] = om.keys[lastIdx], om.keys[i]
+			om.values[i], om.values[lastIdx] = om.values[lastIdx], om.values[i]
+			om.pos[om.keys[i]] = i
+		}
+		delete(om.pos, key)
+		om.keys = om.keys[:lastIdx]
+		om.values = om.values[:lastIdx]
 	}
-
-	lastIdx := len(om.keys) - 1
-	if i != lastIdx {
-		om.keys[i], om.keys[lastIdx] = om.keys[lastIdx], om.keys[i]
-		om.values[i], om.values[lastIdx] = om.values[lastIdx], om.values[i]
-		om.pos[om.keys[i]] = i
-	}
-
-	delete(om.pos, key)
-	om.keys = om.keys[:lastIdx]
-	om.values = om.values[:lastIdx]
 }
 
 func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
@@ -70,7 +66,6 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-
 		keyBytes, err := json.Marshal(key)
 		if err != nil {
 			return nil, err
@@ -79,7 +74,6 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		buf.Write(keyBytes)
 		buf.WriteByte(':')
 		buf.Write(valueBytes)
@@ -94,29 +88,54 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 	om.values = om.values[:0]
 	om.pos = make(map[K]int)
 
-	data = bytes.Trim(data, "{}")
-	if len(data) == 0 {
-		return nil
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+
+	// Ensure it's valid JSON
+	if err := decoder.Decode(&struct{}{}); err != nil {
+		return err
 	}
 
-	pairs := bytes.Split(data, []byte(","))
-	for _, pair := range pairs {
-		colonIndex := bytes.IndexByte(pair, ':')
-		if colonIndex == -1 {
-			return errors.New("malformed JSON: missing colon in key-value pair")
+	// Reset decoder to start of data
+	decoder = json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+
+	// Read the opening brace
+	t, err := decoder.Token()
+	if err != nil {
+		return err
+	}
+	if delim, ok := t.(json.Delim); !ok || delim != '{' {
+		return errors.New("expected opening brace")
+	}
+
+	for decoder.More() {
+		var key K
+		if err := decoder.Decode(&key); err != nil {
+			return err
 		}
 
-		var key K
-		if err := json.Unmarshal(pair[:colonIndex], &key); err != nil {
+		// Consume the colon
+		if err := decoder.Decode(&struct{}{}); err != nil {
 			return err
 		}
 
 		var value V
-		if err := json.Unmarshal(pair[colonIndex+1:], &value); err != nil {
+		if err := decoder.Decode(&value); err != nil {
 			return err
 		}
 		om.Set(key, value)
 	}
+
+	// Read the closing brace
+	t, err = decoder.Token()
+	if err != nil {
+		return err
+	}
+	if delim, ok := t.(json.Delim); !ok || delim != '}' {
+		return errors.New("expected closing brace")
+	}
+
 	return nil
 }
 
