@@ -4,7 +4,6 @@ A Golang data structure that preserves insertion order while behaving like a sta
 
 - Maintains key insertion order
 - Supports JSON serialization/deserialization
-- Provides efficient lookups, inserts, and deletions
 
 # Usage
 
@@ -51,7 +50,7 @@ func main() {
 
 # Features
 
-* Insertion Order Retention: Unlike Go’s built-in maps, OrderedMap keeps track of the order in which keys were inserted.
+* Order Preservation: Unlike Go’s built-in maps, orderedmap keeps track of the order in which keys were inserted.
 * JSON Support: Can be marshaled/unmarshaled while preserving order.
 
 # Caveats
