@@ -2,8 +2,8 @@ package orderedmap
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
+	"github.com/goccy/go-json"
 )
 
 type OrderedMap[K comparable, V any] struct {
