@@ -62,6 +62,6 @@ go test
 
 This project was created for fun and as a simple exercise.
 
-While it works as intended, there are other (and probably better) alternatives available.  
+While it works as intended, there are other alternatives available.  
 
 If you plan to use it in a production environment, please do so at your own risk.
