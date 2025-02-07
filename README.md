@@ -11,7 +11,7 @@ A Golang data structure that preserves insertion order while behaving like a sta
 package main
 
 import (
-	"encoding/json"
+	"encoding/json" // or any other you choose
 	"fmt"
 	"github.com/emretanriverdi/orderedmap"
 )
@@ -26,7 +26,7 @@ func main() {
 	om.Set("c", 3)
 
 	// Retrieve values
-	val := om.Get("b") // Returns 2
+	val := om.GetOrEmpty("b") // Returns 2
 	fmt.Println(val)
 
 	// Get all keys in insertion order

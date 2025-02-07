@@ -1,4 +1,4 @@
-module orderedmap
+module github.com/emretanriverdi/orderedmap
 
 go 1.18
 
