@@ -12,12 +12,6 @@ type OrderedMap[K comparable, V any] struct {
 	pos    map[K]int
 }
 
-func NewOrderedMap[K comparable, V any]() *OrderedMap[K, V] {
-	return &OrderedMap[K, V]{
-		pos: make(map[K]int),
-	}
-}
-
 func (om *OrderedMap[K, V]) Set(key K, value V) {
 	if i, exists := om.pos[key]; exists {
 		om.values[i] = value
