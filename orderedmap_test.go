@@ -8,7 +8,7 @@ import (
 )
 
 func TestOrderedMap(t *testing.T) {
-	om := OrderedMap[string, int]{}
+	om := NewOrderedMap[string, int]()
 
 	// Test Set
 	om.Set("a", 1)
@@ -47,14 +47,14 @@ func TestOrderedMap(t *testing.T) {
 
 	// Test JSON Unmarshaling
 	jsonInput := `{"x":10,"y":20,"z":30}`
-	om2 := OrderedMap[string, int]{}
+	om2 := NewOrderedMap[string, int]()
 	err = json.Unmarshal([]byte(jsonInput), om2)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"x", "y", "z"}, om2.Keys())
 	assert.Equal(t, []int{10, 20, 30}, om2.Values())
 
 	// Empty OrderedMap
-	emptyOM := OrderedMap[string, int]{}
+	emptyOM := NewOrderedMap[string, int]()
 	emptyJSON, err := json.Marshal(emptyOM)
 	assert.Nil(t, err)
 	assert.Equal(t, "{}", string(emptyJSON))

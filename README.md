@@ -11,7 +11,7 @@ A Golang data structure that preserves insertion order while behaving like a sta
 package main
 
 import (
-	"encoding/json" // or any other you choose
+	"encoding/json" // or any other lib of your choice
 	"fmt"
 	"github.com/emretanriverdi/orderedmap"
 )
