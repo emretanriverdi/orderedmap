@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goccy/go-json"
+	"reflect"
+	"sort"
 )
 
 type orderedMap[K comparable, V any] struct {
@@ -72,6 +74,12 @@ func (om *orderedMap[K, V]) ForEach(f func(K, V)) {
 	}
 }
 
+func (om *orderedMap[K, V]) ForEachReverse(f func(K, V)) {
+	for i := len(om.keys) - 1; i >= 0; i-- {
+		f(om.keys[i], om.values[i])
+	}
+}
+
 func (om *orderedMap[K, V]) Clear() {
 	om.keys = om.keys[:0]
 	om.values = om.values[:0]
@@ -90,8 +98,110 @@ func (om *orderedMap[K, V]) Values() []V {
 	return valuesCopy
 }
 
+func (om *orderedMap[K, V]) Reverse() {
+	n := len(om.keys)
+	for i := 0; i < n/2; i++ {
+		j := n - 1 - i
+		om.keys[i], om.keys[j] = om.keys[j], om.keys[i]
+		om.values[i], om.values[j] = om.values[j], om.values[i]
+		om.pos[om.keys[i]] = i
+		om.pos[om.keys[j]] = j
+	}
+}
+
+func (om *orderedMap[K, V]) ContainsKey(key K) bool {
+	_, exists := om.pos[key]
+	return exists
+}
+
+func (om *orderedMap[K, V]) ContainsValue(value V, equal func(a, b V) bool) bool {
+	for _, v := range om.values {
+		if equal(v, value) {
+			return true
+		}
+	}
+	return false
+}
+
+func (om *orderedMap[K, V]) ContainsValueReflect(value V) bool {
+	for _, v := range om.values {
+		if reflect.DeepEqual(v, value) {
+			return true
+		}
+	}
+	return false
+}
+
+func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
+	value, err := om.Get(key)
+	if err != nil {
+		var zero V
+		return zero, false
+	}
+	om.Delete(key)
+	return value, true
+}
+
+func (om *orderedMap[K, V]) Clone() *orderedMap[K, V] {
+	newMap := NewOrderedMap[K, V]()
+	newMap.keys = append(newMap.keys, om.keys...)
+	newMap.values = append(newMap.values, om.values...)
+	newMap.pos = make(map[K]int, len(om.pos))
+	for key, index := range om.pos {
+		newMap.pos[key] = index
+	}
+	return newMap
+}
+
+func (om *orderedMap[K, V]) Merge(other *orderedMap[K, V]) {
+	for _, key := range other.Keys() {
+		value, _ := other.Get(key)
+		om.Set(key, value) // if a key exists, update without changing location
+	}
+}
+
+func (om *orderedMap[K, V]) Sort() error {
+	return om.sortByKey(false)
+}
+
+func (om *orderedMap[K, V]) SortReverse() error {
+	return om.sortByKey(true)
+}
+
+func (om *orderedMap[K, V]) sortByKey(reverse bool) error {
+	if err := om.validateKey(); err != nil {
+		return err
+	}
+
+	type pair struct {
+		key    K
+		value  V
+		strKey string
+	}
+
+	pairs := make([]pair, len(om.keys))
+	for i, key := range om.keys {
+		strKey := any(key).(string) // safe to cast after validateKey.
+		pairs[i] = pair{key: key, value: om.values[i], strKey: strKey}
+	}
+
+	sort.SliceStable(pairs, func(i, j int) bool {
+		if reverse {
+			return pairs[i].strKey > pairs[j].strKey
+		}
+		return pairs[i].strKey < pairs[j].strKey
+	})
+
+	for i, p := range pairs {
+		om.keys[i] = p.key
+		om.values[i] = p.value
+		om.pos[p.key] = i
+	}
+	return nil
+}
+
 func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
-	if err := om.checkKey(); err != nil {
+	if err := om.validateKey(); err != nil {
 		return nil, err
 	}
 	var buf bytes.Buffer
@@ -118,7 +228,7 @@ func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
 }
 
 func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
-	if err := om.checkKey(); err != nil {
+	if err := om.validateKey(); err != nil {
 		return err
 	}
 
@@ -161,7 +271,7 @@ func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
 
 		om.Set(key, value)
 	}
-	
+
 	token, err = dec.Token()
 	if err != nil {
 		return fmt.Errorf("error reading closing token: %w", err)
@@ -190,7 +300,7 @@ func (om *orderedMap[K, V]) String() string {
 	return buf.String()
 }
 
-func (om *orderedMap[K, V]) checkKey() error {
+func (om *orderedMap[K, V]) validateKey() error {
 	var key K
 	switch any(key).(type) {
 	case string:
