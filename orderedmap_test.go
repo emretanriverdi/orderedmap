@@ -282,27 +282,27 @@ func TestOrderedMap(t *testing.T) {
 		assert.Equal(t, []int{3, 2, 1}, om.Values())
 	})
 
-	t.Run("Sort", func(t *testing.T) {
+	t.Run("SortAsc", func(t *testing.T) {
 		om := NewOrderedMap[string, int]()
 		om.Set("delta", 4)
 		om.Set("alpha", 1)
 		om.Set("charlie", 3)
 		om.Set("bravo", 2)
 
-		err := om.Sort()
+		err := om.SortAsc()
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"alpha", "bravo", "charlie", "delta"}, om.Keys())
 		assert.Equal(t, []int{1, 2, 3, 4}, om.Values())
 	})
 
-	t.Run("SortReverse", func(t *testing.T) {
+	t.Run("SortDesc", func(t *testing.T) {
 		om := NewOrderedMap[string, int]()
 		om.Set("delta", 4)
 		om.Set("alpha", 1)
 		om.Set("charlie", 3)
 		om.Set("bravo", 2)
 
-		err := om.SortReverse()
+		err := om.SortDesc()
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"delta", "charlie", "bravo", "alpha"}, om.Keys())
 		assert.Equal(t, []int{4, 3, 2, 1}, om.Values())

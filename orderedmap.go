@@ -160,15 +160,15 @@ func (om *orderedMap[K, V]) Merge(other *orderedMap[K, V]) {
 	}
 }
 
-func (om *orderedMap[K, V]) Sort() error {
-	return om.sortByKey(false)
-}
-
-func (om *orderedMap[K, V]) SortReverse() error {
+func (om *orderedMap[K, V]) SortAsc() error {
 	return om.sortByKey(true)
 }
 
-func (om *orderedMap[K, V]) sortByKey(reverse bool) error {
+func (om *orderedMap[K, V]) SortDesc() error {
+	return om.sortByKey(false)
+}
+
+func (om *orderedMap[K, V]) sortByKey(isAsc bool) error {
 	if err := om.validateKey(); err != nil {
 		return err
 	}
@@ -186,10 +186,10 @@ func (om *orderedMap[K, V]) sortByKey(reverse bool) error {
 	}
 
 	sort.SliceStable(pairs, func(i, j int) bool {
-		if reverse {
-			return pairs[i].strKey > pairs[j].strKey
+		if isAsc {
+			return pairs[i].strKey < pairs[j].strKey
 		}
-		return pairs[i].strKey < pairs[j].strKey
+		return pairs[i].strKey > pairs[j].strKey
 	})
 
 	for i, p := range pairs {
