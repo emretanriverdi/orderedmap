@@ -125,6 +125,13 @@ func (om *orderedMap[K, V]) ContainsValueReflect(value V) bool {
 	})
 }
 
+func (om *orderedMap[K, V]) IndexOf(key K) int {
+	if i, exists := om.pos[key]; exists {
+		return i
+	}
+	return -1
+}
+
 func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
 	value, err := om.Get(key)
 	if err != nil {
@@ -278,6 +285,10 @@ func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
 
 func (om *orderedMap[K, V]) Len() int {
 	return len(om.keys)
+}
+
+func (om *orderedMap[K, V]) IsEmpty() bool {
+	return om == nil || om.Len() == 0
 }
 
 func (om *orderedMap[K, V]) String() string {

@@ -307,4 +307,35 @@ func TestOrderedMap(t *testing.T) {
 		assert.Equal(t, []string{"delta", "charlie", "bravo", "alpha"}, om.Keys())
 		assert.Equal(t, []int{4, 3, 2, 1}, om.Values())
 	})
+
+	t.Run("IsEmpty (nil and empty)", func(t *testing.T) {
+		var nilOM *orderedMap[string, int]
+		assert.True(t, nilOM.IsEmpty())
+
+		emptyOM := New[string, int]()
+		assert.True(t, emptyOM.IsEmpty())
+	})
+
+	t.Run("IsEmpty (non-empty)", func(t *testing.T) {
+		nonEmptyOM := New[string, int]()
+		nonEmptyOM.Set("a", 1)
+		assert.False(t, nonEmptyOM.IsEmpty())
+	})
+
+	t.Run("IndexOf (exists)", func(t *testing.T) {
+		om := New[string, int]()
+		om.Set("a", 1)
+		om.Set("b", 2)
+
+		assert.Equal(t, 0, om.IndexOf("a"))
+		assert.Equal(t, 1, om.IndexOf("b"))
+	})
+
+	t.Run("IndexOf (not exists)", func(t *testing.T) {
+		om := New[string, int]()
+		om.Set("a", 1)
+		om.Set("b", 2)
+
+		assert.Equal(t, -1, om.IndexOf("c"))
+	})
 }
