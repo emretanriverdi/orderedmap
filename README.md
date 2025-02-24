@@ -18,7 +18,7 @@ import (
 
 func main() {
 	// Create a new OrderedMap
-	om := orderedmap.NewOrderedMap[string, int]()
+	om := orderedmap.New[string, int]()
 
 	// Insert key-value pairs
 	om.Set("a", 1)

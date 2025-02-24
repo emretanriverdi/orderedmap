@@ -9,7 +9,7 @@ import (
 
 func TestOrderedMap(t *testing.T) {
 	t.Run("basic operations", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 
 		// Test Set
 		om.Set("a", 1)
@@ -35,7 +35,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("a", 1)
 		om.Set("b", 2)
 		om.Set("c", 3)
@@ -49,7 +49,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("JSON marshaling", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("a", 1)
 		om.Set("c", 3)
 
@@ -62,7 +62,7 @@ func TestOrderedMap(t *testing.T) {
 
 	t.Run("JSON unmarshaling", func(t *testing.T) {
 		jsonInput := `{"x":10,"y":20,"z":30}`
-		om2 := NewOrderedMap[string, int]()
+		om2 := New[string, int]()
 
 		err := json.Unmarshal([]byte(jsonInput), om2)
 		assert.Nil(t, err)
@@ -72,7 +72,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("empty map", func(t *testing.T) {
-		emptyOM := NewOrderedMap[string, int]()
+		emptyOM := New[string, int]()
 
 		emptyJSON, err := json.Marshal(emptyOM)
 		assert.Nil(t, err)
@@ -80,7 +80,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("single-element", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("single", 42)
 
 		oneJSON, err := json.Marshal(om)
@@ -89,11 +89,11 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("nested maps", func(t *testing.T) {
-		inner := NewOrderedMap[string, int]()
+		inner := New[string, int]()
 		inner.Set("inner1", 100)
 		inner.Set("inner2", 200)
 
-		outer := NewOrderedMap[string, *orderedMap[string, int]]()
+		outer := New[string, *orderedMap[string, int]]()
 		outer.Set("outer", inner)
 
 		assert.Equal(t, []string{"outer"}, outer.Keys())
@@ -108,7 +108,7 @@ func TestOrderedMap(t *testing.T) {
 		expectedJSON := `{"outer":{"inner1":100,"inner2":200}}`
 		assert.JSONEq(t, expectedJSON, string(jsonData))
 
-		outer2 := NewOrderedMap[string, *orderedMap[string, int]]()
+		outer2 := New[string, *orderedMap[string, int]]()
 		err = json.Unmarshal([]byte(expectedJSON), outer2)
 		assert.Nil(t, err)
 
@@ -119,7 +119,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("keys with commas", func(t *testing.T) {
-		omComma := NewOrderedMap[string, int]()
+		omComma := New[string, int]()
 		omComma.Set("a,b", 10)
 		omComma.Set("c,d", 20)
 
@@ -132,7 +132,7 @@ func TestOrderedMap(t *testing.T) {
 		expectedJSON := `{"a,b":10,"c,d":20}`
 		assert.JSONEq(t, expectedJSON, string(jsonData))
 
-		omComma2 := NewOrderedMap[string, int]()
+		omComma2 := New[string, int]()
 		err = json.Unmarshal([]byte(expectedJSON), omComma2)
 		assert.Nil(t, err)
 
@@ -141,7 +141,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("keys and values with commas", func(t *testing.T) {
-		omCommaStr := NewOrderedMap[string, string]()
+		omCommaStr := New[string, string]()
 		omCommaStr.Set("a,b", "val,1")
 		omCommaStr.Set("c,d", "val,2")
 
@@ -154,7 +154,7 @@ func TestOrderedMap(t *testing.T) {
 		expectedJSON := `{"a,b":"val,1","c,d":"val,2"}`
 		assert.JSONEq(t, expectedJSON, string(jsonData))
 
-		omCommaStr2 := NewOrderedMap[string, string]()
+		omCommaStr2 := New[string, string]()
 		err = json.Unmarshal([]byte(expectedJSON), omCommaStr2)
 		assert.Nil(t, err)
 
@@ -163,7 +163,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("ForEach", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("first", 1)
 		om.Set("second", 2)
 		om.Set("third", 3)
@@ -181,7 +181,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("ForEachReverse", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("first", 1)
 		om.Set("second", 2)
 		om.Set("third", 3)
@@ -199,7 +199,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("ContainsKey", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("exists", 100)
 
 		assert.True(t, om.ContainsKey("exists"))
@@ -207,7 +207,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("ContainsValue", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("a", 1)
 		om.Set("b", 2)
 		om.Set("c", 3)
@@ -219,7 +219,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("ContainsValueReflect", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("a", 1)
 		om.Set("b", 2)
 		om.Set("c", 3)
@@ -229,7 +229,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("Pop", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("key", 42)
 
 		val, ok := om.Pop("key")
@@ -241,7 +241,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("Clone", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("a", 1)
 		om.Set("b", 2)
 
@@ -254,11 +254,11 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("Merge", func(t *testing.T) {
-		om1 := NewOrderedMap[string, int]()
+		om1 := New[string, int]()
 		om1.Set("a", 1)
 		om1.Set("b", 2)
 
-		om2 := NewOrderedMap[string, int]()
+		om2 := New[string, int]()
 		om2.Set("b", 20)
 		om2.Set("c", 3)
 
@@ -272,7 +272,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("Reverse", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("first", 1)
 		om.Set("second", 2)
 		om.Set("third", 3)
@@ -283,7 +283,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("SortAsc", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("delta", 4)
 		om.Set("alpha", 1)
 		om.Set("charlie", 3)
@@ -296,7 +296,7 @@ func TestOrderedMap(t *testing.T) {
 	})
 
 	t.Run("SortDesc", func(t *testing.T) {
-		om := NewOrderedMap[string, int]()
+		om := New[string, int]()
 		om.Set("delta", 4)
 		om.Set("alpha", 1)
 		om.Set("charlie", 3)

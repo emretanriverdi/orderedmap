@@ -15,7 +15,7 @@ type orderedMap[K comparable, V any] struct {
 	pos    map[K]int
 }
 
-func NewOrderedMap[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
+func New[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
 	return &orderedMap[K, V]{
 		keys:   make([]K, 0),
 		values: make([]V, 0),
@@ -124,12 +124,9 @@ func (om *orderedMap[K, V]) ContainsValue(value V, equal func(a, b V) bool) bool
 }
 
 func (om *orderedMap[K, V]) ContainsValueReflect(value V) bool {
-	for _, v := range om.values {
-		if reflect.DeepEqual(v, value) {
-			return true
-		}
-	}
-	return false
+	return om.ContainsValue(value, func(a, b V) bool {
+		return reflect.DeepEqual(a, b)
+	})
 }
 
 func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
@@ -143,7 +140,7 @@ func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
 }
 
 func (om *orderedMap[K, V]) Clone() *orderedMap[K, V] {
-	newMap := NewOrderedMap[K, V]()
+	newMap := New[K, V]()
 	newMap.keys = append(newMap.keys, om.keys...)
 	newMap.values = append(newMap.values, om.values...)
 	newMap.pos = make(map[K]int, len(om.pos))
