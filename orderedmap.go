@@ -55,12 +55,8 @@ func (om *orderedMap[K, V]) Delete(key K) {
 		return
 	}
 
-	copy(om.keys[i:], om.keys[i+1:])
-	om.keys = om.keys[:len(om.keys)-1]
-
-	copy(om.values[i:], om.values[i+1:])
-	om.values = om.values[:len(om.values)-1]
-
+	om.keys = append(om.keys[:i], om.keys[i+1:]...)
+	om.values = append(om.values[:i], om.values[i+1:]...)
 	delete(om.pos, key)
 
 	for j := i; j < len(om.keys); j++ {
