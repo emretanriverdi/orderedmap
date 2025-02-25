@@ -11,75 +11,71 @@ import (
 
 type orderedMap[K comparable, V any] struct {
 	keys   []K
-	values []V
-	pos    map[K]int
+	values map[K]V
 }
 
 func New[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
+	return NewWithCapacity[K, V](16) // pre-allocate
+}
+
+func NewWithCapacity[K comparable, V any](capacity int) *orderedMap[K, V] {
 	return &orderedMap[K, V]{
-		keys:   make([]K, 0),
-		values: make([]V, 0),
-		pos:    make(map[K]int),
+		keys:   make([]K, 0, capacity),
+		values: make(map[K]V, capacity),
 	}
 }
 
 func (om *orderedMap[K, V]) Set(key K, value V) {
-	if i, exists := om.pos[key]; exists {
-		om.values[i] = value
-		return
+	if _, exists := om.values[key]; !exists {
+		om.keys = append(om.keys, key)
 	}
-	om.pos[key] = len(om.keys)
-	om.keys = append(om.keys, key)
-	om.values = append(om.values, value)
+	om.values[key] = value
 }
 
 func (om *orderedMap[K, V]) Get(key K) (V, error) {
-	if i, exists := om.pos[key]; exists {
-		return om.values[i], nil
+	if value, exists := om.values[key]; exists {
+		return value, nil
 	}
 	var zero V
 	return zero, errors.New("key not found")
 }
 
 func (om *orderedMap[K, V]) GetOrEmpty(key K) V {
-	if i, exists := om.pos[key]; exists {
-		return om.values[i]
+	if value, exists := om.values[key]; exists {
+		return value
 	}
 	var zero V
 	return zero
 }
 
 func (om *orderedMap[K, V]) Delete(key K) {
-	i, exists := om.pos[key]
-	if !exists {
+	if _, exists := om.values[key]; !exists {
 		return
 	}
-
-	om.keys = append(om.keys[:i], om.keys[i+1:]...)
-	om.values = append(om.values[:i], om.values[i+1:]...)
-	delete(om.pos, key)
-
-	for j := i; j < len(om.keys); j++ {
-		om.pos[om.keys[j]] = j
+	for i, k := range om.keys {
+		if k == key {
+			om.keys = append(om.keys[:i], om.keys[i+1:]...)
+			break
+		}
 	}
+	delete(om.values, key)
 }
 
 func (om *orderedMap[K, V]) ForEach(f func(K, V)) {
-	for i, key := range om.keys {
-		f(key, om.values[i])
+	for _, key := range om.keys {
+		f(key, om.values[key])
 	}
 }
 
 func (om *orderedMap[K, V]) ForEachReverse(f func(K, V)) {
 	for i := len(om.keys) - 1; i >= 0; i-- {
-		f(om.keys[i], om.values[i])
+		f(om.keys[i], om.values[om.keys[i]])
 	}
 }
 
 func (om *orderedMap[K, V]) Clear() {
 	om.keys = om.keys[:0]
-	om.values = om.values[:0]
-	om.pos = make(map[K]int)
+	om.values = make(map[K]V, len(om.values))
 }
 
 func (om *orderedMap[K, V]) Keys() []K {
@@ -89,24 +85,22 @@ func (om *orderedMap[K, V]) Keys() []K {
 }
 
 func (om *orderedMap[K, V]) Values() []V {
-	valuesCopy := make([]V, len(om.values))
-	copy(valuesCopy, om.values)
+	valuesCopy := make([]V, len(om.keys))
+	for i, key := range om.keys {
+		valuesCopy[i] = om.values[key]
+	}
 	return valuesCopy
 }
 
 func (om *orderedMap[K, V]) Reverse() {
-	n := len(om.keys)
-	for i := 0; i < n/2; i++ {
-		j := n - 1 - i
+	for i := 0; i < len(om.keys)/2; i++ {
+		j := len(om.keys) - 1 - i
 		om.keys[i], om.keys[j] = om.keys[j], om.keys[i]
-		om.values[i], om.values[j] = om.values[j], om.values[i]
-		om.pos[om.keys[i]] = i
-		om.pos[om.keys[j]] = j
 	}
 }
 
 func (om *orderedMap[K, V]) ContainsKey(key K) bool {
-	_, exists := om.pos[key]
+	_, exists := om.values[key]
 	return exists
 }
 
@@ -125,9 +119,18 @@ func (om *orderedMap[K, V]) ContainsValueReflect(value V) bool {
 	})
 }
 
+func (om *orderedMap[K, V]) IndexOf(key K) int {
+	for i, k := range om.keys {
+		if k == key {
+			return i
+		}
+	}
+	return -1
+}
+
 func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
-	value, err := om.Get(key)
-	if err != nil {
+	value, exists := om.values[key]
+	if !exists {
 		var zero V
 		return zero, false
 	}
@@ -136,20 +139,20 @@ func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
 }
 
 func (om *orderedMap[K, V]) Clone() *orderedMap[K, V] {
-	newMap := New[K, V]()
-	newMap.keys = append(newMap.keys, om.keys...)
-	newMap.values = append(newMap.values, om.values...)
-	newMap.pos = make(map[K]int, len(om.pos))
-	for key, index := range om.pos {
-		newMap.pos[key] = index
+	newMap := &orderedMap[K, V]{
+		keys:   make([]K, len(om.keys)),
+		values: make(map[K]V, len(om.values)),
+	}
+	copy(newMap.keys, om.keys)
+	for k, v := range om.values {
+		newMap.values[k] = v
 	}
 	return newMap
 }
 
 func (om *orderedMap[K, V]) Merge(other *orderedMap[K, V]) {
-	for _, key := range other.Keys() {
-		value, _ := other.Get(key)
-		om.Set(key, value) // if a key exists, update without changing location
+	for _, key := range other.keys {
+		om.Set(key, other.values[key]) // if a key exists, update without changing location
 	}
 }
 
@@ -165,31 +168,13 @@ func (om *orderedMap[K, V]) sortByKey(isAsc bool) error {
 	if err := om.validateKey(); err != nil {
 		return err
 	}
-
-	type pair struct {
-		key    K
-		value  V
-		strKey string
-	}
-
-	pairs := make([]pair, len(om.keys))
-	for i, key := range om.keys {
-		strKey := any(key).(string) // safe to cast after validateKey.
-		pairs[i] = pair{key: key, value: om.values[i], strKey: strKey}
-	}
-
-	sort.SliceStable(pairs, func(i, j int) bool {
+	sort.SliceStable(om.keys, func(i, j int) bool {
+		keyI, keyJ := any(om.keys[i]).(string), any(om.keys[j]).(string) // safe to cast after validateKey.
 		if isAsc {
-			return pairs[i].strKey < pairs[j].strKey
+			return keyI < keyJ
 		}
-		return pairs[i].strKey > pairs[j].strKey
+		return keyI > keyJ
 	})
-
-	for i, p := range pairs {
-		om.keys[i] = p.key
-		om.values[i] = p.value
-		om.pos[p.key] = i
-	}
 	return nil
 }
 
@@ -198,6 +183,7 @@ func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	var buf bytes.Buffer
+	buf.Grow(64 * len(om.keys)) // heuristic pre-allocation
 	buf.WriteByte('{')
 	for i, key := range om.keys {
 		if i > 0 {
@@ -208,12 +194,12 @@ func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		valueBytes, err := json.Marshal(om.values[i])
+		buf.Write(keyBytes)
+		buf.WriteByte(':')
+		valueBytes, err := json.Marshal(om.values[key])
 		if err != nil {
 			return nil, err
 		}
-		buf.Write(keyBytes)
-		buf.WriteByte(':')
 		buf.Write(valueBytes)
 	}
 	buf.WriteByte('}')
@@ -224,60 +210,64 @@ func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
 	if err := om.validateKey(); err != nil {
 		return err
 	}
-
 	trimmedData := bytes.TrimSpace(data)
 	if bytes.Equal(trimmedData, []byte("null")) {
-		om.keys = nil
-		om.values = nil
-		om.pos = make(map[K]int)
+		om.Clear()
 		return nil
 	}
 
 	om.Clear()
 
 	dec := json.NewDecoder(bytes.NewReader(data))
-	token, err := dec.Token()
-	if err != nil {
+	if _, err := dec.Token(); err != nil {
 		return fmt.Errorf("error reading opening token: %w", err)
-	}
-	delim, ok := token.(json.Delim)
-	if !ok || delim != '{' {
-		return errors.New("error in json: expected '{' at the beginning of JSON object")
 	}
 
 	for dec.More() {
 		token, err := dec.Token()
 		if err != nil {
-			return fmt.Errorf("error reading key token: %w", err)
+			return fmt.Errorf("error in json: %w", err)
 		}
 
 		keyStr, ok := token.(string)
 		if !ok {
-			return fmt.Errorf("expected key token to be string, got %T", token)
+			return fmt.Errorf("expected key token to be string, got: %T", token)
 		}
 
-		var key = any(keyStr).(K)
+		key := any(keyStr).(K)
+		var raw json.RawMessage
+		if err := dec.Decode(&raw); err != nil {
+			return fmt.Errorf("error in json: %w", err)
+		}
+
 		var value V
-		if err := dec.Decode(&value); err != nil {
-			return fmt.Errorf("error decoding value for key %v: %w", key, err)
+		switch any(value).(type) {
+		case *orderedMap[string, any]:
+			nested := New[string, any]()
+			if err := json.Unmarshal(raw, nested); err != nil {
+				return fmt.Errorf("error unmarshaling nested map for key %s: %w", keyStr, err)
+			}
+			value = any(nested).(V)
+		default:
+			if err := json.Unmarshal(raw, &value); err != nil {
+				return fmt.Errorf("error unmarshaling value for key %s: %w", keyStr, err)
+			}
 		}
-
 		om.Set(key, value)
 	}
 
-	token, err = dec.Token()
-	if err != nil {
+	if _, err := dec.Token(); err != nil {
 		return fmt.Errorf("error reading closing token: %w", err)
-	}
-	delim, ok = token.(json.Delim)
-	if !ok || delim != '}' {
-		return errors.New("error in json: expected '}' at the end of JSON object")
 	}
 	return nil
 }
 
 func (om *orderedMap[K, V]) Len() int {
 	return len(om.keys)
+}
+
+func (om *orderedMap[K, V]) IsEmpty() bool {
+	return om == nil || om.Len() == 0
 }
 
 func (om *orderedMap[K, V]) String() string {
@@ -287,7 +277,7 @@ func (om *orderedMap[K, V]) String() string {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		buf.WriteString(fmt.Sprintf("%v: %v", key, om.values[i]))
+		buf.WriteString(fmt.Sprintf("%v: %v", key, om.values[key]))
 	}
 	buf.WriteByte('}')
 	return buf.String()
