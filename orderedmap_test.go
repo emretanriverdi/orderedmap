@@ -98,7 +98,7 @@ func TestOrderedMap(t *testing.T) {
 
 		assert.Equal(t, []string{"outer"}, outer.Keys())
 
-		nestedMap := outer.GetOrEmpty("outer")
+		nestedMap := outer.GetOrDefault("outer")
 		assert.Equal(t, []string{"inner1", "inner2"}, nestedMap.Keys())
 		assert.Equal(t, []int{100, 200}, nestedMap.Values())
 
@@ -113,7 +113,7 @@ func TestOrderedMap(t *testing.T) {
 		assert.Nil(t, err)
 
 		assert.Equal(t, []string{"outer"}, outer2.Keys())
-		nestedMap2 := outer2.GetOrEmpty("outer")
+		nestedMap2 := outer2.GetOrDefault("outer")
 		assert.Equal(t, []string{"inner1", "inner2"}, nestedMap2.Keys())
 		assert.Equal(t, []int{100, 200}, nestedMap2.Values())
 	})

@@ -26,7 +26,7 @@ func main() {
 	om.Set("c", 3)
 
 	// Retrieve values
-	val := om.GetOrEmpty("b") // Returns 2
+	val := om.GetOrDefault("b") // Returns 2
 	fmt.Println(val)
 
 	// Get all keys in insertion order
@@ -62,4 +62,4 @@ go test
 
 This project was created for fun and as a simple exercise.
 
-If you plan to use it in a production environment, please do so at your own risk.
+If you plan to use it in production environment, please do so at your own risk.
