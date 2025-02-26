@@ -1,6 +1,6 @@
 module github.com/emretanriverdi/orderedmap
 
-go 1.24
+go 1.20
 
 require (
 	github.com/goccy/go-json v0.10.5

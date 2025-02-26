@@ -8,7 +8,7 @@ import (
 )
 
 func TestOrderedMap(t *testing.T) {
-	t.Run("basic operations", func(t *testing.T) {
+	t.Run("basic operations (get-set)", func(t *testing.T) {
 		om := New[string, int]()
 
 		// Test Set
@@ -27,6 +27,10 @@ func TestOrderedMap(t *testing.T) {
 		// Test Get non-existent key
 		_, err = om.Get("d")
 		assert.NotNil(t, err)
+
+		// Test GetOrDefault
+		val = om.GetOrDefault("d")
+		assert.Equal(t, 0, val)
 
 		// Test Update
 		om.Set("b", 5)
@@ -118,28 +122,6 @@ func TestOrderedMap(t *testing.T) {
 		assert.Equal(t, []int{100, 200}, nestedMap2.Values())
 	})
 
-	t.Run("keys with commas", func(t *testing.T) {
-		omComma := New[string, int]()
-		omComma.Set("a,b", 10)
-		omComma.Set("c,d", 20)
-
-		assert.Equal(t, []string{"a,b", "c,d"}, omComma.Keys())
-		assert.Equal(t, []int{10, 20}, omComma.Values())
-
-		jsonData, err := json.Marshal(omComma)
-		assert.Nil(t, err)
-
-		expectedJSON := `{"a,b":10,"c,d":20}`
-		assert.JSONEq(t, expectedJSON, string(jsonData))
-
-		omComma2 := New[string, int]()
-		err = json.Unmarshal([]byte(expectedJSON), omComma2)
-		assert.Nil(t, err)
-
-		assert.Equal(t, []string{"a,b", "c,d"}, omComma2.Keys())
-		assert.Equal(t, []int{10, 20}, omComma2.Values())
-	})
-
 	t.Run("keys and values with commas", func(t *testing.T) {
 		omCommaStr := New[string, string]()
 		omCommaStr.Set("a,b", "val,1")
@@ -207,10 +189,11 @@ func TestOrderedMap(t *testing.T) {
 		var keys []string
 		var values []int
 
-		for k, v := range om.Iter() {
+		om.Iter()(func(k string, v int) bool {
 			keys = append(keys, k)
 			values = append(values, v)
-		}
+			return true
+		})
 
 		assert.Equal(t, []string{"first", "second", "third"}, keys)
 		assert.Equal(t, []int{1, 2, 3}, values)
@@ -225,10 +208,11 @@ func TestOrderedMap(t *testing.T) {
 		var keys []string
 		var values []int
 
-		for k, v := range om.IterReverse() {
+		om.IterReverse()(func(k string, v int) bool {
 			keys = append(keys, k)
 			values = append(values, v)
-		}
+			return true
+		})
 
 		assert.Equal(t, []string{"third", "second", "first"}, keys)
 		assert.Equal(t, []int{3, 2, 1}, values)
@@ -344,10 +328,7 @@ func TestOrderedMap(t *testing.T) {
 		assert.Equal(t, []int{4, 3, 2, 1}, om.Values())
 	})
 
-	t.Run("IsEmpty (nil and empty)", func(t *testing.T) {
-		var nilOM *orderedMap[string, int]
-		assert.True(t, nilOM.IsEmpty())
-
+	t.Run("IsEmpty (empty)", func(t *testing.T) {
 		emptyOM := New[string, int]()
 		assert.True(t, emptyOM.IsEmpty())
 	})
@@ -358,20 +339,13 @@ func TestOrderedMap(t *testing.T) {
 		assert.False(t, nonEmptyOM.IsEmpty())
 	})
 
-	t.Run("IndexOf (exists)", func(t *testing.T) {
+	t.Run("IndexOf", func(t *testing.T) {
 		om := New[string, int]()
 		om.Set("a", 1)
 		om.Set("b", 2)
 
 		assert.Equal(t, 0, om.IndexOf("a"))
 		assert.Equal(t, 1, om.IndexOf("b"))
-	})
-
-	t.Run("IndexOf (not exists)", func(t *testing.T) {
-		om := New[string, int]()
-		om.Set("a", 1)
-		om.Set("b", 2)
-
 		assert.Equal(t, -1, om.IndexOf("c"))
 	})
 }

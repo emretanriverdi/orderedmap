@@ -8,7 +8,6 @@ import (
 	"iter"
 	"reflect"
 	"sort"
-	"sync"
 )
 
 var errKeyNotFound = errors.New("key not found")
@@ -22,12 +21,10 @@ type node[K comparable, V any] struct {
 }
 
 type orderedMap[K comparable, V any] struct {
-	head        *node[K, V]
-	tail        *node[K, V]
-	values      map[K]*node[K, V]
-	size        int
-	pool        *sync.Pool
-	isKeyString bool // pre-calculate key's type to check if it's parseable (and save it to avoid multiple calculations)
+	head   *node[K, V]
+	tail   *node[K, V]
+	values map[K]*node[K, V]
+	size   int
 }
 
 func New[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
@@ -35,15 +32,8 @@ func New[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
 }
 
 func NewWithCapacity[K comparable, V any](capacity int) *orderedMap[K, V] {
-	var zero K
 	om := &orderedMap[K, V]{
 		values: make(map[K]*node[K, V], capacity),
-		pool: &sync.Pool{
-			New: func() interface{} {
-				return new(node[K, V])
-			},
-		},
-		isKeyString: isKeyString(zero),
 	}
 	return om
 }
@@ -54,12 +44,10 @@ func (om *orderedMap[K, V]) Set(key K, value V) {
 		return
 	}
 
-	n := om.pool.Get().(*node[K, V])
-	n.key = key
-	n.value = value
-	n.prev = nil
-	n.next = nil
-
+	n := &node[K, V]{
+		key:   key,
+		value: value,
+	}
 	om.values[key] = n
 	if om.head == nil {
 		om.head = n
@@ -101,9 +89,6 @@ func (om *orderedMap[K, V]) Delete(key K) {
 			n.next.prev = n.prev
 		}
 		delete(om.values, key)
-		n.prev = nil
-		n.next = nil
-		om.pool.Put(n)
 		om.size--
 	}
 }
@@ -145,7 +130,6 @@ func (om *orderedMap[K, V]) Clear() {
 		next := n.next
 		n.prev = nil
 		n.next = nil
-		om.pool.Put(n)
 		n = next
 	}
 	om.head = nil
@@ -292,7 +276,6 @@ func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		if !first {
 			buf.WriteByte(',')
 		}
-		// We can safely cast key to string here because we know it is one.
 		keyBytes, err := json.Marshal(any(n.key).(string))
 		if err != nil {
 			return nil, err
@@ -389,15 +372,9 @@ func (om *orderedMap[K, V]) String() string {
 }
 
 func (om *orderedMap[K, V]) validateKey() error {
-	if om.isKeyString {
+	var key K
+	if _, ok := any(key).(string); ok {
 		return nil
 	}
 	return errKeyMustBeStringForJson
-}
-
-func isKeyString(key any) bool {
-	if _, ok := key.(string); ok {
-		return true
-	}
-	return false
 }
