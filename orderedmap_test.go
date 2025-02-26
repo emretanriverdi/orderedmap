@@ -198,6 +198,42 @@ func TestOrderedMap(t *testing.T) {
 		assert.Equal(t, []int{3, 2, 1}, values)
 	})
 
+	t.Run("Iter", func(t *testing.T) {
+		om := New[string, int]()
+		om.Set("first", 1)
+		om.Set("second", 2)
+		om.Set("third", 3)
+
+		var keys []string
+		var values []int
+
+		for k, v := range om.Iter() {
+			keys = append(keys, k)
+			values = append(values, v)
+		}
+
+		assert.Equal(t, []string{"first", "second", "third"}, keys)
+		assert.Equal(t, []int{1, 2, 3}, values)
+	})
+
+	t.Run("IterReverse", func(t *testing.T) {
+		om := New[string, int]()
+		om.Set("first", 1)
+		om.Set("second", 2)
+		om.Set("third", 3)
+
+		var keys []string
+		var values []int
+
+		for k, v := range om.IterReverse() {
+			keys = append(keys, k)
+			values = append(values, v)
+		}
+
+		assert.Equal(t, []string{"third", "second", "first"}, keys)
+		assert.Equal(t, []int{3, 2, 1}, values)
+	})
+
 	t.Run("ContainsKey", func(t *testing.T) {
 		om := New[string, int]()
 		om.Set("exists", 100)

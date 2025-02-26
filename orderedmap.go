@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goccy/go-json"
+	"iter"
 	"reflect"
 	"sort"
 	"sync"
@@ -116,6 +117,26 @@ func (om *orderedMap[K, V]) ForEach(f func(K, V)) {
 func (om *orderedMap[K, V]) ForEachReverse(f func(K, V)) {
 	for n := om.tail; n != nil; n = n.prev {
 		f(n.key, n.value)
+	}
+}
+
+func (om *orderedMap[K, V]) Iter() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for n := om.head; n != nil; n = n.next {
+			if !yield(n.key, n.value) {
+				break
+			}
+		}
+	}
+}
+
+func (om *orderedMap[K, V]) IterReverse() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for n := om.tail; n != nil; n = n.prev {
+			if !yield(n.key, n.value) {
+				break
+			}
+		}
 	}
 }
 
