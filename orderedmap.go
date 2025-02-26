@@ -21,11 +21,12 @@ type node[K comparable, V any] struct {
 }
 
 type orderedMap[K comparable, V any] struct {
-	head   *node[K, V]
-	tail   *node[K, V]
-	values map[K]*node[K, V]
-	size   int
-	pool   *sync.Pool
+	head        *node[K, V]
+	tail        *node[K, V]
+	values      map[K]*node[K, V]
+	size        int
+	pool        *sync.Pool
+	isKeyString bool // pre-calculate key's type to check if it's parseable (and save it to avoid multiple calculations)
 }
 
 func New[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
@@ -33,6 +34,7 @@ func New[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
 }
 
 func NewWithCapacity[K comparable, V any](capacity int) *orderedMap[K, V] {
+	var zero K
 	om := &orderedMap[K, V]{
 		values: make(map[K]*node[K, V], capacity),
 		pool: &sync.Pool{
@@ -40,6 +42,7 @@ func NewWithCapacity[K comparable, V any](capacity int) *orderedMap[K, V] {
 				return new(node[K, V])
 			},
 		},
+		isKeyString: isKeyString(zero),
 	}
 	return om
 }
@@ -268,6 +271,7 @@ func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		if !first {
 			buf.WriteByte(',')
 		}
+		// We can safely cast key to string here because we know it is one.
 		keyBytes, err := json.Marshal(any(n.key).(string))
 		if err != nil {
 			return nil, err
@@ -317,7 +321,7 @@ func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf("error in json: %w", err)
 		}
 
-		var value V
+		var value V // tricky force-casting by checking if value can be treated as orderedmap to use its own unmarshal
 		if _, isMap := any(value).(*orderedMap[string, any]); isMap {
 			nested := New[string, any]()
 			if err := json.Unmarshal(raw, nested); err != nil {
@@ -364,9 +368,15 @@ func (om *orderedMap[K, V]) String() string {
 }
 
 func (om *orderedMap[K, V]) validateKey() error {
-	var key K
-	if _, ok := any(key).(string); ok {
+	if om.isKeyString {
 		return nil
 	}
 	return errKeyMustBeStringForJson
+}
+
+func isKeyString(key any) bool {
+	if _, ok := key.(string); ok {
+		return true
+	}
+	return false
 }
