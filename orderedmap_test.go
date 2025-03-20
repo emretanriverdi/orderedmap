@@ -97,7 +97,7 @@ func TestOrderedMap(t *testing.T) {
 		inner.Set("inner1", 100)
 		inner.Set("inner2", 200)
 
-		outer := New[string, *orderedMap[string, int]]()
+		outer := New[string, *OrderedMap[string, int]]()
 		outer.Set("outer", inner)
 
 		assert.Equal(t, []string{"outer"}, outer.Keys())
@@ -112,7 +112,7 @@ func TestOrderedMap(t *testing.T) {
 		expectedJSON := `{"outer":{"inner1":100,"inner2":200}}`
 		assert.JSONEq(t, expectedJSON, string(jsonData))
 
-		outer2 := New[string, *orderedMap[string, int]]()
+		outer2 := New[string, *OrderedMap[string, int]]()
 		err = json.Unmarshal([]byte(expectedJSON), outer2)
 		assert.Nil(t, err)
 

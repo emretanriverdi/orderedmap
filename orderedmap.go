@@ -20,25 +20,25 @@ type node[K comparable, V any] struct {
 	next  *node[K, V]
 }
 
-type orderedMap[K comparable, V any] struct {
+type OrderedMap[K comparable, V any] struct {
 	head   *node[K, V]
 	tail   *node[K, V]
 	values map[K]*node[K, V]
 	size   int
 }
 
-func New[K comparable, V any]() *orderedMap[K, V] { // intentionally hidden
+func New[K comparable, V any]() *OrderedMap[K, V] { // intentionally hidden
 	return NewWithCapacity[K, V](16) // pre-allocate
 }
 
-func NewWithCapacity[K comparable, V any](capacity int) *orderedMap[K, V] {
-	om := &orderedMap[K, V]{
+func NewWithCapacity[K comparable, V any](capacity int) *OrderedMap[K, V] {
+	om := &OrderedMap[K, V]{
 		values: make(map[K]*node[K, V], capacity),
 	}
 	return om
 }
 
-func (om *orderedMap[K, V]) Set(key K, value V) {
+func (om *OrderedMap[K, V]) Set(key K, value V) {
 	if existingNode, exists := om.values[key]; exists {
 		existingNode.value = value
 		return
@@ -60,7 +60,7 @@ func (om *orderedMap[K, V]) Set(key K, value V) {
 	om.size++
 }
 
-func (om *orderedMap[K, V]) Get(key K) (V, error) {
+func (om *OrderedMap[K, V]) Get(key K) (V, error) {
 	if n, exists := om.values[key]; exists {
 		return n.value, nil
 	}
@@ -68,7 +68,7 @@ func (om *orderedMap[K, V]) Get(key K) (V, error) {
 	return zero, errKeyNotFound
 }
 
-func (om *orderedMap[K, V]) GetOrDefault(key K) V {
+func (om *OrderedMap[K, V]) GetOrDefault(key K) V {
 	if n, exists := om.values[key]; exists {
 		return n.value
 	}
@@ -76,7 +76,7 @@ func (om *orderedMap[K, V]) GetOrDefault(key K) V {
 	return zero
 }
 
-func (om *orderedMap[K, V]) Delete(key K) {
+func (om *OrderedMap[K, V]) Delete(key K) {
 	if n, exists := om.values[key]; exists {
 		if n == om.head {
 			om.head = n.next
@@ -93,19 +93,19 @@ func (om *orderedMap[K, V]) Delete(key K) {
 	}
 }
 
-func (om *orderedMap[K, V]) ForEach(f func(K, V)) {
+func (om *OrderedMap[K, V]) ForEach(f func(K, V)) {
 	for n := om.head; n != nil; n = n.next {
 		f(n.key, n.value)
 	}
 }
 
-func (om *orderedMap[K, V]) ForEachReverse(f func(K, V)) {
+func (om *OrderedMap[K, V]) ForEachReverse(f func(K, V)) {
 	for n := om.tail; n != nil; n = n.prev {
 		f(n.key, n.value)
 	}
 }
 
-func (om *orderedMap[K, V]) Iter() iter.Seq2[K, V] {
+func (om *OrderedMap[K, V]) Iter() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for n := om.head; n != nil; n = n.next {
 			if !yield(n.key, n.value) {
@@ -115,7 +115,7 @@ func (om *orderedMap[K, V]) Iter() iter.Seq2[K, V] {
 	}
 }
 
-func (om *orderedMap[K, V]) IterReverse() iter.Seq2[K, V] {
+func (om *OrderedMap[K, V]) IterReverse() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for n := om.tail; n != nil; n = n.prev {
 			if !yield(n.key, n.value) {
@@ -125,7 +125,7 @@ func (om *orderedMap[K, V]) IterReverse() iter.Seq2[K, V] {
 	}
 }
 
-func (om *orderedMap[K, V]) Clear() {
+func (om *OrderedMap[K, V]) Clear() {
 	for n := om.head; n != nil; {
 		next := n.next
 		n.prev = nil
@@ -138,7 +138,7 @@ func (om *orderedMap[K, V]) Clear() {
 	om.size = 0
 }
 
-func (om *orderedMap[K, V]) Keys() []K {
+func (om *OrderedMap[K, V]) Keys() []K {
 	keys := make([]K, om.size)
 	index := 0
 	for n := om.head; n != nil; n = n.next {
@@ -148,7 +148,7 @@ func (om *orderedMap[K, V]) Keys() []K {
 	return keys
 }
 
-func (om *orderedMap[K, V]) Values() []V {
+func (om *OrderedMap[K, V]) Values() []V {
 	values := make([]V, om.size)
 	index := 0
 	for n := om.head; n != nil; n = n.next {
@@ -158,19 +158,19 @@ func (om *orderedMap[K, V]) Values() []V {
 	return values
 }
 
-func (om *orderedMap[K, V]) Reverse() {
+func (om *OrderedMap[K, V]) Reverse() {
 	om.head, om.tail = om.tail, om.head
 	for n := om.head; n != nil; n = n.next {
 		n.prev, n.next = n.next, n.prev
 	}
 }
 
-func (om *orderedMap[K, V]) ContainsKey(key K) bool {
+func (om *OrderedMap[K, V]) ContainsKey(key K) bool {
 	_, exists := om.values[key]
 	return exists
 }
 
-func (om *orderedMap[K, V]) ContainsValue(value V, equal func(a, b V) bool) bool {
+func (om *OrderedMap[K, V]) ContainsValue(value V, equal func(a, b V) bool) bool {
 	for n := om.head; n != nil; n = n.next {
 		if equal(n.value, value) {
 			return true
@@ -179,13 +179,13 @@ func (om *orderedMap[K, V]) ContainsValue(value V, equal func(a, b V) bool) bool
 	return false
 }
 
-func (om *orderedMap[K, V]) ContainsValueReflect(value V) bool {
+func (om *OrderedMap[K, V]) ContainsValueReflect(value V) bool {
 	return om.ContainsValue(value, func(a, b V) bool {
 		return reflect.DeepEqual(a, b)
 	})
 }
 
-func (om *orderedMap[K, V]) IndexOf(key K) int {
+func (om *OrderedMap[K, V]) IndexOf(key K) int {
 	index := 0
 	for n := om.head; n != nil; n = n.next {
 		if n.key == key {
@@ -196,7 +196,7 @@ func (om *orderedMap[K, V]) IndexOf(key K) int {
 	return -1
 }
 
-func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
+func (om *OrderedMap[K, V]) Pop(key K) (V, bool) {
 	if n, exists := om.values[key]; exists {
 		value := n.value
 		om.Delete(key)
@@ -206,7 +206,7 @@ func (om *orderedMap[K, V]) Pop(key K) (V, bool) {
 	return zero, false
 }
 
-func (om *orderedMap[K, V]) Clone() *orderedMap[K, V] {
+func (om *OrderedMap[K, V]) Clone() *OrderedMap[K, V] {
 	newMap := NewWithCapacity[K, V](om.size)
 	for n := om.head; n != nil; n = n.next {
 		newMap.Set(n.key, n.value)
@@ -214,25 +214,25 @@ func (om *orderedMap[K, V]) Clone() *orderedMap[K, V] {
 	return newMap
 }
 
-func (om *orderedMap[K, V]) Merge(other *orderedMap[K, V]) {
+func (om *OrderedMap[K, V]) Merge(other *OrderedMap[K, V]) {
 	for n := other.head; n != nil; n = n.next {
 		om.Set(n.key, n.value) // if a key exists, update without changing location
 	}
 }
 
-func (om *orderedMap[K, V]) SortAsc() error {
+func (om *OrderedMap[K, V]) SortAsc() error {
 	return om.sortKeys(func(i, j int, keys []K) bool {
 		return any(keys[i]).(string) < any(keys[j]).(string) // safe to cast after validateKey.
 	})
 }
 
-func (om *orderedMap[K, V]) SortDesc() error {
+func (om *OrderedMap[K, V]) SortDesc() error {
 	return om.sortKeys(func(i, j int, keys []K) bool {
 		return any(keys[i]).(string) > any(keys[j]).(string) // safe to cast after validateKey.
 	})
 }
 
-func (om *orderedMap[K, V]) sortKeys(less func(i, j int, keys []K) bool) error {
+func (om *OrderedMap[K, V]) sortKeys(less func(i, j int, keys []K) bool) error {
 	if err := om.validateKey(); err != nil {
 		return err
 	}
@@ -244,7 +244,7 @@ func (om *orderedMap[K, V]) sortKeys(less func(i, j int, keys []K) bool) error {
 	return nil
 }
 
-func (om *orderedMap[K, V]) rebuildFromKeys(keys []K) {
+func (om *OrderedMap[K, V]) rebuildFromKeys(keys []K) {
 	om.head = nil
 	om.tail = nil
 	om.size = 0
@@ -264,7 +264,7 @@ func (om *orderedMap[K, V]) rebuildFromKeys(keys []K) {
 	}
 }
 
-func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
+func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 	if err := om.validateKey(); err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func (om *orderedMap[K, V]) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
+func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 	if err := om.validateKey(); err != nil {
 		return err
 	}
@@ -326,7 +326,7 @@ func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
 		}
 
 		var value V // tricky force-casting by checking if value can be treated as orderedmap to use its own unmarshal
-		if _, isMap := any(value).(*orderedMap[string, any]); isMap {
+		if _, isMap := any(value).(*OrderedMap[string, any]); isMap {
 			nested := New[string, any]()
 			if err := json.Unmarshal(raw, nested); err != nil {
 				return fmt.Errorf("error unmarshaling nested map for key %s: %w", keyStr, err)
@@ -346,15 +346,15 @@ func (om *orderedMap[K, V]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (om *orderedMap[K, V]) Len() int {
+func (om *OrderedMap[K, V]) Len() int {
 	return om.size
 }
 
-func (om *orderedMap[K, V]) IsEmpty() bool {
+func (om *OrderedMap[K, V]) IsEmpty() bool {
 	return om.size == 0
 }
 
-func (om *orderedMap[K, V]) String() string {
+func (om *OrderedMap[K, V]) String() string {
 	var buf bytes.Buffer
 	buf.WriteByte('{')
 	first := true
@@ -371,7 +371,7 @@ func (om *orderedMap[K, V]) String() string {
 	return buf.String()
 }
 
-func (om *orderedMap[K, V]) validateKey() error {
+func (om *OrderedMap[K, V]) validateKey() error {
 	var key K
 	if _, ok := any(key).(string); ok {
 		return nil
